@@ -10,7 +10,7 @@ var urlSchema = mongoose.Schema({
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  res.render('index', { title: 'Jun Kai\'s Url Shorterner Service' });
 });
 
 router.get('/api/:url(*)', function(req, res){
