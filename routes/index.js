@@ -1,59 +1,69 @@
 var express = require('express');
 var router = express.Router();
 var mongoose = require('mongoose');
+var request = require('request');
+
+var urlSchema = mongoose.Schema({
+      originalURL: String,
+      shortURL: String
+});
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.get('/api/:url', function(req, res){
+router.get('/api/:url(*)', function(req, res){
   //res.send(req.params.url);
   var db=mongoose.connect("mongodb://admin:admin@ds119728.mlab.com:19728/prototype");
   //db.on('error', console.error.bind(console, 'connection error:'));
-  var urlSchema = mongoose.Schema({
-      originalURL: String,
-      shortURL: String
-  });
-
   var url = mongoose.model('url', urlSchema);
+  // verify url exists
+  //var random;
+  //var original;
+  request(req.params.url, function(error, response, body){
+    if(error){
+        var random = "Null";
+        var original = "URL not valid";
+        var data = {
+          originalURL: original,
+          shortURL: random
+        };
+        res.json(data);
+     }
+    else{
+          var original = req.params.url;
+          var random = Math.floor(Math.random()*10000);
+          random = random.toString();
+          var item = new url({
+            originalURL: original, 
+            shortURL: random
+          });
 
-  var original = req.params.url;
-  var random = Math.floor(Math.random()*10000);
-  var s = random.toString();
-  
-  var item = new url({
-    originalURL: original, 
-    shortURL: s
-  });
+         item.save();
+         var data = {
+           originalURL: original,
+           shortURL: random
+          };
+         res.json(data);
+        }
+    });
 
-  item.save();
-  var data = {
-    originalURL: item.originalURL,
-    shortURL: s
-  };
-  res.json(data); 
 });
 
-router.get('/:url',function(req,res){
+router.get('/:num',function(req,res){
   var db = mongoose.connect("mongodb://admin:admin@ds119728.mlab.com:19728/prototype");
-  var urlSchema = mongoose.Schema({
-    originalURL: String,
-    shortURL: String
-  });
-
+ 
   var url = mongoose.model('url', urlSchema);
-  var url_arg = req.params.url;
+  var url_arg = req.params.num;
   var ori;
-  var obj = url.findOne({'shortURL': url_arg},'originalURL', function(err, lol){
+  url.findOne({'shortURL': url_arg},'originalURL', function(err, lol){
     if(err){
         console.log("Databse error");
     }
-    ori = "https://www."+ lol.originalURL;
+    ori = lol.originalURL;
     console.log(ori);
-    res.send(ori);
+    res.redirect(301, ori);
   });
-  //res.send(ori);
-  //return res.redirect('https://www.google.com');
 });
 module.exports = router;
